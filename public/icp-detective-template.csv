@@ -1,0 +1,4 @@
+domain,name,label,deal_value,plan,source
+northwind.example,Northwind Traders,winner,24000,Pro,Referral
+contoso.example,Contoso,winner,18000,Pro,Outbound
+fabrikam.example,Fabrikam,loser,3000,Starter,Paid ads
