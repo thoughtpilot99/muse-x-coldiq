@@ -106,6 +106,23 @@ CREATE TABLE IF NOT EXISTS ai_runs (
   error TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE TABLE IF NOT EXISTS offer_checks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  domain TEXT NOT NULL,
+  role TEXT,
+  token TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'new',
+  sources TEXT,
+  raw TEXT,
+  facts TEXT,
+  result TEXT,
+  analysis TEXT,
+  credits REAL NOT NULL DEFAULT 0,
+  error TEXT,
+  fetched_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS offer_checks_domain ON offer_checks(domain, fetched_at);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS secrets (
   name TEXT PRIMARY KEY,
@@ -169,6 +186,37 @@ const COMPANY_COLS = new Set(["name", "label", "deal_value", "profile", "lenses_
 
 export const updateStudy = (id: number, f: Partial<Record<keyof Study, Param>>) => update("studies", STUDY_COLS, id, f);
 export const updateCompany = (id: number, f: Partial<Record<keyof Company, Param>>) => update("companies", COMPANY_COLS, id, f);
+
+export type OfferCheckStatus = "new" | "scored" | "done" | "failed";
+
+export type OfferCheck = {
+  id: number;
+  domain: string;
+  role: string | null;
+  token: string;
+  status: OfferCheckStatus;
+  sources: string | null; // JSON Record<Source, SourceState>
+  raw: string | null; // JSON RawSources, trimmed; local only, never shown or shared
+  facts: string | null; // JSON Facts
+  result: string | null; // JSON ScoreResult
+  analysis: string | null; // JSON OfferAnalysis
+  credits: number;
+  error: string | null;
+  fetched_at: string | null;
+  created_at: string;
+};
+
+const OFFER_COLS = new Set(["status", "sources", "raw", "facts", "result", "analysis", "credits", "error", "fetched_at"]);
+
+export const getOfferCheck = (id: number) => get<OfferCheck>("SELECT * FROM offer_checks WHERE id = ?", id);
+export const getOfferCheckByToken = (token: string) => get<OfferCheck>("SELECT * FROM offer_checks WHERE token = ?", token);
+export const offerChecks = (limit = 50) => all<OfferCheck>("SELECT * FROM offer_checks ORDER BY id DESC LIMIT ?", limit);
+
+export function updateOfferCheck(id: number, fields: Partial<Record<keyof OfferCheck, Param>>) {
+  const keys = Object.keys(fields).filter((k) => OFFER_COLS.has(k) && fields[k as keyof OfferCheck] !== undefined);
+  if (!keys.length) return;
+  run(`UPDATE offer_checks SET ${keys.map((k) => `${k} = ?`).join(", ")} WHERE id = ?`, ...keys.map((k) => fields[k as keyof OfferCheck] ?? null), id);
+}
 
 export function logEvent(e: { source: string; kind: string; ok: boolean; note?: string; payload?: string }) {
   run(

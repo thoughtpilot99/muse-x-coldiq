@@ -1,4 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/muse", async (orig) => ({ ...(await orig<typeof import("@/lib/muse")>()), runStructured: vi.fn() }));
+
+import { runStructured } from "@/lib/muse";
+import { explainOffer, factTable, ungroundedSentences } from "@/lib/offer/agent";
 import { buildFacts, type Facts, type RawSources, type Source, type SourceState } from "@/lib/offer/facts";
 import { scoreFacts } from "@/lib/offer/score";
 import financing from "./fixtures/linear-financing.json";
@@ -130,5 +135,41 @@ describe("offer score", () => {
     expect(r.score).toBe(Math.round((30 * 100 + 20 * 0) / 50));
     const thin = scoreFacts(withChanges(base, (f) => { f.hiring.known = false; f.news.known = false; f.funding.last = null; f.funding.monthsSince = null; }));
     expect(thin.score).toBeNull();
+  });
+});
+
+describe("offer explanation", () => {
+  beforeEach(() => vi.mocked(runStructured).mockReset());
+  const f = facts({ role: "Account Executive" });
+  const s = scoreFacts(f);
+  const answer = (verdict: string) => ({ verdict, good: ["39 open roles now vs 31 90 days ago."], worries: [], questions: ["What is the runway after the Series C?"], caveats: [] });
+
+  it("gives the model numbered facts with every number and no names", () => {
+    const table = factTable(f, s);
+    expect(table).toContain("F1 | Company | Linear, Software Development");
+    expect(table).toContain("last round: Series C, $82M, 2025-06-10, 16 months ago");
+    expect(table).toContain("rough runway estimate: 14-29 months left");
+    expect(table).toContain("open Sales roles now (the candidate's department): 6");
+    expect(table).toContain("100/100");
+    expect(table).not.toMatch(/Naomi|Cristina/);
+  });
+
+  it("accepts numbers from the facts and flags invented ones", () => {
+    const table = factTable(f, s);
+    expect(ungroundedSentences(["Linear raised $82M 16 months ago. It has 14-29 months of runway."], table)).toEqual([]);
+    expect(ungroundedSentences(["Headcount grew 12% last year.", "Revenue is $40M."], table)).toEqual(["Revenue is $40M."]);
+  });
+
+  it("retries once, then marks what is still not in the facts", async () => {
+    vi.mocked(runStructured)
+      .mockResolvedValueOnce(answer("Linear has 200 open roles."))
+      .mockResolvedValueOnce(answer("Linear is hiring fast, with 39 open roles."));
+    const a = await explainOffer({ facts: f, score: s, checkId: 1 });
+    expect(runStructured).toHaveBeenCalledTimes(2);
+    expect(String(vi.mocked(runStructured).mock.calls[1][0].user)).toContain("Linear has 200 open roles.");
+    expect(a.unverified).toEqual([]);
+
+    vi.mocked(runStructured).mockReset().mockResolvedValue(answer("Runway is 40 months."));
+    expect((await explainOffer({ facts: f, score: s, checkId: 1 })).unverified).toEqual(["Runway is 40 months."]);
   });
 });
