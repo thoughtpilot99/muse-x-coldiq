@@ -21,8 +21,6 @@ export type Facts = {
     last: Round | null;
     monthsSince: number | null;
     raised36mUsd: number | null;
-    /** Months of runway left, as a rough range; null when amount, date or headcount is unknown. */
-    runway: { low: number; high: number } | null;
   };
   hiring: {
     known: boolean;
@@ -57,8 +55,6 @@ const time = (v: unknown) => {
 const day = (t: number) => new Date(t).toISOString().slice(0, 10);
 export const monthsBetween = (from: number, to: number) => Math.max(0, Math.floor((to - from) / (30.44 * DAY)));
 
-const SECONDARY = /secondary|tender|debt|grant|ipo|post[-_ ]?ipo|acquisition/i;
-
 function fundingRounds(financing: unknown, enrich: unknown): Round[] {
   const fromEvents = rows(financing).map((r) => ({
     date: (() => {
@@ -86,8 +82,7 @@ const LEADER = /\b(chief [a-z]+ officer|c[etofmrp]o|vp(?: of)? [a-z]+|vice presi
 const WARNINGS: Record<string, string> = {
   decreases_headcount_by: "Headcount reduction reported",
   closes_offices_in: "Office closure reported",
-  has_issues_with: "Reported issues or disputes",
-  files_suit_against: "Legal dispute reported",
+  has_issues_with: "Security, product or legal incident reported",
   sells_assets_to: "Sold assets",
   merges_with: "Merger reported",
 };
@@ -108,7 +103,6 @@ export function buildFacts(input: {
   now: Date;
   raw: RawSources;
   sources: Record<Source, SourceState>;
-  costPerHead: { low: number; high: number };
 }): Facts {
   const now = input.now.getTime();
   const { raw, sources } = input;
@@ -129,13 +123,6 @@ export function buildFacts(input: {
   const lastTime = last?.date ? Date.parse(last.date) : null;
   const monthsSince = lastTime === null ? null : monthsBetween(lastTime, now);
   const recent = rounds.filter((r) => r.date && now - Date.parse(r.date) <= 36 * 30.44 * DAY && r.amountUsd);
-  const cash = rounds.find((r) => r.date && r.amountUsd && !SECONDARY.test(r.type));
-  let runway: Facts["funding"]["runway"] = null;
-  if (cash?.amountUsd && cash.date && company.headcount) {
-    const since = monthsBetween(Date.parse(cash.date), now);
-    const total = (cost: number) => cash.amountUsd! / (company.headcount! * cost);
-    runway = { low: Math.max(0, Math.floor(total(input.costPerHead.high) - since)), high: Math.max(0, Math.floor(total(input.costPerHead.low) - since)) };
-  }
 
   // Hiring
   const jobs = sources.jobs === "ok" ? rows(raw.jobs) : [];
@@ -186,7 +173,6 @@ export function buildFacts(input: {
       last,
       monthsSince,
       raised36mUsd: recent.length ? recent.reduce((s, r) => s + (r.amountUsd ?? 0), 0) : null,
-      runway,
     },
     hiring: {
       known: sources.jobs === "ok" && (jobs.length > 0 || noneConfirmed),

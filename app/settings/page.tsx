@@ -38,8 +38,6 @@ export default async function SettingsPage() {
         <Card title="Offer Check">
           <div className="grid gap-3 md:grid-cols-3">
             {field("offerCheckCreditCap", "Credits per check", "A full check costs about 11")}
-            {field("costPerHeadLow", "Monthly cost per employee, low ($)", "For the runway estimate")}
-            {field("costPerHeadHigh", "Monthly cost per employee, high ($)")}
           </div>
         </Card>
         <Card title="Analysis">

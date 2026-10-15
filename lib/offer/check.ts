@@ -127,13 +127,9 @@ export async function runOfferCheck(id: number, opts: { now?: Date } = {}): Prom
   const check = getOfferCheck(id);
   if (!check) throw new Error("Check not found.");
   const now = opts.now ?? new Date();
-  const s = getSettings();
   try {
     const g = await gather(check, now.getTime());
-    const facts = buildFacts({
-      domain: check.domain, role: check.role, now, raw: g.raw, sources: g.sources,
-      costPerHead: { low: s.costPerHeadLow, high: s.costPerHeadHigh },
-    });
+    const facts = buildFacts({ domain: check.domain, role: check.role, now, raw: g.raw, sources: g.sources });
     const result = scoreFacts(facts);
     updateOfferCheck(id, {
       status: "scored", sources: JSON.stringify(g.sources), raw: JSON.stringify(g.raw), facts: JSON.stringify(facts),

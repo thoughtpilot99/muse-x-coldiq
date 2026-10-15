@@ -20,7 +20,7 @@ export default async function OfferCheckPage() {
       <div>
         <h1 className="text-2xl font-semibold">Offer Check</h1>
         <p className="text-sm text-muted">
-          Got a job offer? Check the company&apos;s health before you sign: funding and runway, hiring trend, team growth and news from the
+          Got a job offer? Check the company&apos;s health before you sign: funding, hiring trend, team growth and news from the
           last 12 months, scored by fixed rules and explained in plain words, with questions to ask in your interview.
         </p>
       </div>

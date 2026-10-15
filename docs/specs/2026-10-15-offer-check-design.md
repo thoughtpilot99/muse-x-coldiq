@@ -1,6 +1,6 @@
 # Offer Check: design
 
-Date: 2026-10-15. Status: draft for review.
+Date: 2026-10-15. Status: built. Changed after the live test on 2026-10-15, see "Changes after live testing".
 
 ## Goal
 
@@ -78,3 +78,11 @@ New table `offer_checks(id, domain, role, token, status, facts, result, analysis
 ## Docs
 
 README: a new "Offer Check" section (problem, how it works, how the score is computed, costs, limits). Root README line updated.
+
+## Changes after live testing (2026-10-15)
+
+Tested on linear.app and vercel.com (22 credits).
+
+- **Runway estimate removed.** It called Linear red ("2-11 months left") because public data has no revenue. Funding is now judged only on months since the last round; runway is left to the interview questions. The cost-per-employee settings were removed with it.
+- **News rules tightened.** Vercel had 29 `has_issues_with` items, almost all security incidents. Repeats of one kind now count once ("... (27, latest 2026-09-22)"). Red is only for layoffs, office closures or two or more senior leaders leaving; incidents, mergers, asset sales and one departure are amber. `files_suit_against` (the company suing someone) is no longer a warning.
+- **Website changes** source dropped: ColdIQ returned 404 for it.

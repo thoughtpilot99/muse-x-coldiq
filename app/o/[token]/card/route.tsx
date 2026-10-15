@@ -14,11 +14,11 @@ export async function GET(_req: Request, ctx: RouteContext<"/o/[token]/card">) {
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#0f1012", color: "#ececec", padding: 64, fontFamily: "sans-serif" }}>
-        <div style={{ fontSize: 26, color: "#9a9ca3", letterSpacing: 2 }}>OFFER CHECK · {c.domain}</div>
+        <div style={{ fontSize: 26, color: "#9a9ca3", letterSpacing: 2 }}>{`OFFER CHECK · ${c.domain}`}</div>
         <div style={{ fontSize: 64, fontWeight: 700, marginTop: 16 }}>{c.factsData.company.name ?? c.domain}</div>
         <div style={{ display: "flex", alignItems: "baseline", marginTop: 24 }}>
-          <div style={{ fontSize: 120, fontWeight: 800 }}>{r.score ?? "–"}</div>
-          <div style={{ fontSize: 36, color: "#9a9ca3", marginLeft: 16 }}>{r.score === null ? "" : "/ 100 · "}{scoreLabel(r.score)}</div>
+          <div style={{ fontSize: 120, fontWeight: 800 }}>{String(r.score ?? "–")}</div>
+          <div style={{ fontSize: 36, color: "#9a9ca3", marginLeft: 16 }}>{`${r.score === null ? "" : "/ 100 · "}${scoreLabel(r.score)}`}</div>
         </div>
         <div style={{ display: "flex", marginTop: "auto", gap: 16 }}>
           {r.areas.map((a) => (

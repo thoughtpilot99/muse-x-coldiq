@@ -6,23 +6,26 @@ ICP Detective runs on your own computer with your own keys. You upload a CSV of 
 
 It doesn't send anything to anyone. It answers one question: *who should we actually be selling to?*
 
+It also includes **[Offer Check](#offer-check)**, for the other side of the table: got a job offer? Enter the company's website and get a health check in about a minute (funding, hiring trend, team growth and news, scored by fixed rules), with questions to ask in your interview.
+
 ---
 
 ## Contents
 1. [Why it exists](#why-it-exists)
 2. [How it works](#how-it-works)
 3. [Features](#features)
-4. [Quick start (5 minutes)](#quick-start)
-5. [Connecting each tool](#connecting-each-tool)
-6. [Preparing your CSV](#preparing-your-csv)
-7. [Running a study](#running-a-study)
-8. [How the numbers are computed](#how-the-numbers-are-computed)
-9. [Credits and costs](#credits-and-costs)
-10. [Privacy and safety](#privacy-and-safety)
-11. [Troubleshooting](#troubleshooting)
-12. [Configuration reference](#configuration-reference)
-13. [Project structure and development](#project-structure-and-development)
-14. [Roadmap](#roadmap)
+4. [Offer Check](#offer-check)
+5. [Quick start (5 minutes)](#quick-start)
+6. [Connecting each tool](#connecting-each-tool)
+7. [Preparing your CSV](#preparing-your-csv)
+8. [Running a study](#running-a-study)
+9. [How the numbers are computed](#how-the-numbers-are-computed)
+10. [Credits and costs](#credits-and-costs)
+11. [Privacy and safety](#privacy-and-safety)
+12. [Troubleshooting](#troubleshooting)
+13. [Configuration reference](#configuration-reference)
+14. [Project structure and development](#project-structure-and-development)
+15. [Roadmap](#roadmap)
 
 ---
 
@@ -115,6 +118,49 @@ flowchart LR
 - **Resumable enrichment:** a study paused by a cap continues where it stopped.
 - **Events page** showing every ColdIQ call, the credits it cost and the raw response.
 - **Keys entered in the app** (or in `.env.local`), stored only on your machine.
+
+---
+
+## Offer Check
+
+### The problem
+
+People accept job offers at startups that freeze hiring or run out of money a few months later. The warning signs are usually public: no funding for years, open roles disappearing, the team shrinking, layoffs or leaders leaving in the news. But checking them means digging through funding databases, careers pages and news by hand, and Glassdoor shows opinions, not data. Founder runway calculators don't help either: they need the company's cash and burn, which a candidate never sees.
+
+### What it does
+
+Enter a company website and, optionally, the role you were offered. Offer Check makes four ColdIQ calls, computes the facts in code and scores four areas:
+
+| Area | Data (ColdIQ) | Green | Amber | Red |
+|---|---|---|---|---|
+| Funding (30%) | Funding events | Last round 18 months ago or less | 19-30 months | Over 30 months (amber at most for companies with 1,000+ people, which often fund themselves) |
+| Hiring (30%) | Job openings with first and last seen dates | Open roles now are at least 80% of 90 days ago | 40-80% | Under 40%, or the careers page was checked and is empty |
+| Team (20%) | Company enrichment | Headcount growth 0% or more over 12 months | 0% to -10% | Under -10% |
+| News (20%) | News events, last 12 months | No warning signs | Incidents, a merger, asset sales or one senior leader leaving | Layoffs, office closures, or two or more senior leaders leaving |
+
+- **Unknown is not bad.** An area with no data is shown as "Unknown" and left out of the score. If less than half of the weight is known, there is no score, just "Not enough data".
+- **The score** is the weighted average of the known areas (green 100, amber 50, red 0).
+- **If you give your role**, it also counts the open roles in that department (for example "open Sales roles now: 6").
+- **Muse Wonder** then writes a short verdict, what looks good, what to watch and five questions to ask in your interview. It gets only the numbered fact table, and every number it writes is checked against that table (one retry, then a "not verified" label).
+- **Share it:** each check has a public link (`/o/<token>`, not indexed) and a 1200x630 image card for X and LinkedIn previews.
+
+### Why there's no runway estimate
+
+An early version estimated runway from the last round and the headcount. Tested on real companies, it called healthy, fast-growing companies "red" because public data has no revenue figures. A guess like that does more harm than good, so the runway question is now one of the interview questions instead.
+
+### Real example (October 2026)
+
+| Company | Funding | Hiring | Team | News | Score |
+|---|---|---|---|---|---|
+| linear.app | Series C, 16 months ago | 43 open roles vs 36 | +10% | No warning signs | 100 |
+| vercel.com | Series F, 12 months ago | 126 open roles vs 78 | +4% | 27 security incidents reported, a Chief Revenue Officer left | 90 |
+
+### Cost and limits
+
+- About **11 credits per company** (company enrichment about 3.5, then three flat 2.51-credit calls), roughly $0.16. A check never spends more than the cap in Settings (default 15).
+- Checking the same company again within **7 days is free**: the saved data is reused.
+- People are described **by role only** ("A Chief Revenue Officer left"), never by name. Raw provider data stays on your computer.
+- Public data can be late or incomplete, and some companies aren't covered. **Not financial or career advice.**
 
 ---
 
@@ -260,7 +306,7 @@ A study's total spend is shown on its page, and every call is listed on **Events
   - the trait table sent to Muse Wonder. It holds labels and counts, with no names or domains. Custom CSV columns do appear in it, so don't use a column that identifies customers.
 - **The public report shows aggregates only:** counts, shares and trait labels. Customer names and domains are never included. It is served at an unguessable 16-character link with `noindex` and a strict content security policy.
 - **Keys** are stored in `data/app.db` (gitignored) or `.env.local` (gitignored). See [SECURITY.md](SECURITY.md).
-- **Before exposing the app** through a tunnel, set `APP_PASSWORD`. Every page except `/report/<token>` then requires it.
+- **Before exposing the app** through a tunnel, set `APP_PASSWORD`. Every page except `/report/<token>` and Offer Check's `/o/<token>` then requires it.
 - **ColdIQ responses and CSV content are untrusted input.** They are passed to Muse Wonder as data, with instructions to ignore anything that looks like a command.
 - **Nothing is sent to your prospects or customers.** The app makes no writes to any CRM or sending tool.
 
@@ -308,6 +354,8 @@ app/
   studies/[id]/            Progress, ICP, trait table, lookalikes, companies
   studies/[id]/export/     CSV export (customers or lookalikes)
   report/[token]/          Public report (HTML, ?download=1 to save)
+  offer-check/             Offer Check form, past checks and the full result
+  o/[token]/               Public Offer Check page, plus /card (share image)
   setup/ settings/ events/
 lib/
   coldiq.ts                ColdIQ client: auth, 429 retry, credit capture
@@ -319,9 +367,10 @@ lib/
   lookalike.ts             Search filters and scoring
   pipeline.ts              Create, enrich, analyse, find lookalikes
   report.ts                Self-contained report HTML
+  offer/                   Offer Check: facts.ts, score.ts (rules), agent.ts (Muse + number check), check.ts (ColdIQ, cache, cap), report.ts
   csv.ts                   CSV parsing and column mapping
   db.ts secrets.ts settings.ts muse.ts jobs.ts
-tests/                     Vitest: CSV, stats, grounding, ColdIQ client, credit caps, full mocked study
+tests/                     Vitest: CSV, stats, grounding, ColdIQ client, credit caps, full mocked study, Offer Check on real linear.app data
 ```
 
 ```bash

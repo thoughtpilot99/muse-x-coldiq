@@ -11,10 +11,8 @@ export type Settings = {
   lookalikeLimit: number;
   /** A trait needs at least this many winners before it can be part of the ICP. */
   minSupport: number;
-  /** Offer Check: credits one check may spend, and the monthly cost per employee used for the runway estimate. */
+  /** Offer Check: credits one check may spend. */
   offerCheckCreditCap: number;
-  costPerHeadLow: number;
-  costPerHeadHigh: number;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,8 +23,6 @@ export const DEFAULT_SETTINGS: Settings = {
   lookalikeLimit: 25,
   minSupport: 3,
   offerCheckCreditCap: 15,
-  costPerHeadLow: 10_000,
-  costPerHeadHigh: 15_000,
 };
 
 export function getSettings(): Settings {

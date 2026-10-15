@@ -24,16 +24,14 @@ const facts = (over: { raw?: RawSources; sources?: Partial<Record<Source, Source
     now: NOW,
     raw: { enrich: ENRICH, financing, jobs, news, ...over.raw },
     sources: { ...ALL_OK, ...over.sources },
-    costPerHead: { low: 10_000, high: 15_000 },
   });
 
 describe("offer facts", () => {
-  it("reads funding, runway, hiring and team from real responses", () => {
+  it("reads funding, hiring and team from real responses", () => {
     const f = facts({ role: "Account Executive" });
     expect(f.company).toEqual({ name: "Linear", industry: "Software Development", headcount: 180, growthPct: 12 });
     expect(f.funding.last).toEqual({ date: "2025-06-10", type: "Series C", amountUsd: 82_000_000 });
     expect(f.funding.monthsSince).toBe(16);
-    expect(f.funding.runway).toEqual({ low: 14, high: 29 });
     expect(f.hiring).toMatchObject({ known: true, openNow: 39, open90DaysAgo: 31, newLast90: 22, newPrior90: 21, roleDepartment: "Sales", roleOpenNow: 6 });
   });
 
@@ -67,12 +65,11 @@ describe("offer facts", () => {
     expect(r.score).toBeNull();
   });
 
-  it("leaves secondary sales out of the runway estimate", () => {
-    const f = facts({
-      raw: { financing: { data: [{ attributes: { effective_date: "2026-09-01", financing_type: "Secondary Market", amount_normalized: 500_000_000 } }, ...financing.data] } },
-    });
-    expect(f.funding.last?.type).toBe("Secondary Market");
-    expect(f.funding.runway).toEqual({ low: 14, high: 29 });
+  it("dates rounds by the event and falls back to when it was found", () => {
+    const f = facts({ raw: { financing: { data: [{ attributes: { found_at: "2026-09-01T10:00:00Z", financing_type: "Series D", amount_normalized: 150_000_000 } }, ...financing.data] } } });
+    expect(f.funding.last).toEqual({ date: "2026-09-01", type: "Series D", amountUsd: 150_000_000 });
+    expect(f.funding.monthsSince).toBe(1);
+    expect(f.funding.raised36mUsd).toBe(232_000_000);
   });
 
   it("skips the role line when the role matches no department", () => {
@@ -97,15 +94,13 @@ describe("offer score", () => {
   });
 
   it("applies the funding thresholds and the late-stage cap", () => {
-    const at = (months: number, headcount = 180, runway: Facts["funding"]["runway"] = null) =>
-      scoreFacts(withChanges(base, (f) => { f.funding.monthsSince = months; f.funding.runway = runway; f.company.headcount = headcount; })).areas[0].level;
+    const at = (months: number, headcount = 180) =>
+      scoreFacts(withChanges(base, (f) => { f.funding.monthsSince = months; f.company.headcount = headcount; })).areas[0].level;
     expect(at(18)).toBe("green");
     expect(at(19)).toBe("amber");
     expect(at(30)).toBe("amber");
     expect(at(31)).toBe("red");
     expect(at(31, 5000)).toBe("amber");
-    expect(at(10, 180, { low: 5, high: 9 })).toBe("red");
-    expect(at(10, 180, { low: 8, high: 20 })).toBe("amber");
   });
 
   it("applies the hiring, team and news thresholds", () => {
@@ -120,13 +115,23 @@ describe("offer score", () => {
     const team = (g: number) => scoreFacts(withChanges(base, (f) => { f.company.growthPct = g; })).areas[2].level;
     expect([team(0), team(-10), team(-11)]).toEqual(["green", "amber", "red"]);
 
-    const item = (category: string) => ({ date: "2026-08-01", category, label: category });
-    const newsLevel = (w: string[], d = 0) =>
-      scoreFacts(withChanges(base, (f) => { f.news.warnings = w.map(item); f.news.departures = Array.from({ length: d }, () => item("leaves")); })).areas[3].level;
-    expect(newsLevel(["merges_with"])).toBe("amber");
-    expect(newsLevel([], 1)).toBe("amber");
-    expect(newsLevel(["merges_with"], 1)).toBe("red");
-    expect(newsLevel(["decreases_headcount_by"])).toBe("red");
+    const item = (category: string, day = 1) => ({ date: `2026-08-${String(day).padStart(2, "0")}`, category, label: category });
+    const newsArea = (w: string[], d = 0) =>
+      scoreFacts(withChanges(base, (f) => { f.news.warnings = w.map((c, i) => item(c, i + 1)); f.news.departures = Array.from({ length: d }, () => item("leaves")); })).areas[3];
+    expect(newsArea(["merges_with"]).level).toBe("amber");
+    expect(newsArea([], 1).level).toBe("amber");
+    expect(newsArea(["merges_with"], 1).level).toBe("amber");
+    expect(newsArea([], 2).level).toBe("red");
+    expect(newsArea(["decreases_headcount_by"]).level).toBe("red");
+    expect(newsArea(["closes_offices_in"]).level).toBe("red");
+  });
+
+  it("counts many incidents of one kind once (vercel.com had 29 security reports)", () => {
+    const a = scoreFacts(withChanges(base, (f) => {
+      f.news.warnings = Array.from({ length: 29 }, (_, i) => ({ date: `2026-0${(i % 9) + 1}-10`, category: "has_issues_with", label: "Security, product or legal incident reported" }));
+    })).areas[3];
+    expect(a.level).toBe("amber");
+    expect(a.reason).toBe("In the last 12 months: Security, product or legal incident reported (29, latest 2026-09-10).");
   });
 
   it("leaves unknown areas out and needs half the weight to give a score", () => {
@@ -148,7 +153,6 @@ describe("offer explanation", () => {
     const table = factTable(f, s);
     expect(table).toContain("F1 | Company | Linear, Software Development");
     expect(table).toContain("last round: Series C, $82M, 2025-06-10, 16 months ago");
-    expect(table).toContain("rough runway estimate: 14-29 months left");
     expect(table).toContain("open Sales roles now (the candidate's department): 6");
     expect(table).toContain("100/100");
     expect(table).not.toMatch(/Naomi|Cristina/);
@@ -156,7 +160,7 @@ describe("offer explanation", () => {
 
   it("accepts numbers from the facts and flags invented ones", () => {
     const table = factTable(f, s);
-    expect(ungroundedSentences(["Linear raised $82M 16 months ago. It has 14-29 months of runway."], table)).toEqual([]);
+    expect(ungroundedSentences(["Linear raised $82M 16 months ago. It has 39 open roles."], table)).toEqual([]);
     expect(ungroundedSentences(["Headcount grew 12% last year.", "Revenue is $40M."], table)).toEqual(["Revenue is $40M."]);
   });
 

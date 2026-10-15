@@ -11,10 +11,10 @@ ICP Detective is a **local, single-user** app. Please keep it that way unless yo
 - The CSV you upload is stored in `data/app.db` only.
 - Company domains (and names, for the advertising lens) are sent to ColdIQ for enrichment.
 - Muse Wonder receives the trait table (labels and counts), not company names or domains.
-- The public report at `/report/<token>` contains aggregates only. Anyone with the link can open it, so share it deliberately. Delete the study to remove it.
+- The public report at `/report/<token>` contains aggregates only. Anyone with the link can open it, so share it deliberately. Delete the study to remove it. The same goes for Offer Check pages at `/o/<token>`: they show computed facts and roles, never names or raw provider data.
 
 ## Exposing the app
-A tunnel (for example `cloudflared tunnel --url http://localhost:3000`) makes the **whole UI** reachable. Set `APP_PASSWORD` in `.env.local` **before** starting it. Every page except `/report/<token>` then requires it.
+A tunnel (for example `cloudflared tunnel --url http://localhost:3000`) makes the **whole UI** reachable. Set `APP_PASSWORD` in `.env.local` **before** starting it. Every page except `/report/<token>` and `/o/<token>` then requires it.
 
 ## Spending
 ColdIQ calls are capped per run, per day and per company (Settings), and each call carries `max_credits` equal to the smallest remaining cap.
