@@ -1,0 +1,55 @@
+{
+ "data": [
+  {
+   "id": "dd0cc902-ceaf-4424-b1e8-cc70ac0fe668",
+   "type": "financing_event",
+   "attributes": {
+    "effective_date": "2025-06-10",
+    "found_at": "2025-06-10T17:19:12+02:00",
+    "financing_type": "Series C",
+    "financing_type_normalized": "series_c",
+    "amount": "$82 million",
+    "amount_normalized": 82000000
+   }
+  },
+  {
+   "id": "782d2dd6-384e-4edc-aa50-289068635a55",
+   "type": "financing_event",
+   "attributes": {
+    "effective_date": null,
+    "found_at": "2023-09-13T04:00:00+02:00",
+    "financing_type": "Series B",
+    "financing_type_normalized": "series_b",
+    "amount": "$35 million",
+    "amount_normalized": 35000000
+   }
+  },
+  {
+   "id": "8ab3e725-4c2d-438a-80d7-66c0a6f82e70",
+   "type": "financing_event",
+   "attributes": {
+    "effective_date": null,
+    "found_at": "2020-12-08T01:00:00+01:00",
+    "financing_type": "Series A",
+    "financing_type_normalized": "series_a",
+    "amount": "$13M",
+    "amount_normalized": 13000000
+   }
+  },
+  {
+   "id": "be284e89-737e-44c7-b9bf-30e5f3c7d38e",
+   "type": "financing_event",
+   "attributes": {
+    "effective_date": "2019-11-21",
+    "found_at": "2019-11-21T01:00:00+01:00",
+    "financing_type": "Seed",
+    "financing_type_normalized": "seed",
+    "amount": "$4.2M",
+    "amount_normalized": 4200000
+   }
+  }
+ ],
+ "meta": {
+  "message_type": "ok"
+ }
+}
