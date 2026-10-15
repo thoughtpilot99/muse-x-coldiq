@@ -12,9 +12,11 @@ export const DISCLAIMER = "Not financial or career advice. Based on public data 
 const money = (n: number) => (n >= 1e9 ? `$${+(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `$${+(n / 1e6).toFixed(1)}M` : `$${Math.round(n / 1e3)}K`);
 const list = (items: string[]) => (items.length ? `<ul>${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : "");
 
-export function scoreLabel(score: number | null) {
+/** The headline label. With under 75% of the data known, it says so: "100" from half the data is not "healthy". */
+export function scoreLabel(score: number | null, coverage = 1) {
   if (score === null) return "Not enough data";
-  return score >= 75 ? "Looks healthy" : score >= 45 ? "Mixed signals" : "Several warning signs";
+  const label = score >= 75 ? "Looks healthy" : score >= 45 ? "Mixed signals" : "Several warning signs";
+  return coverage < 0.75 ? `${label} (limited data)` : label;
 }
 
 export function offerReportHtml(c: OfferView, origin: string): string {
@@ -62,7 +64,7 @@ footer{margin-top:40px;color:var(--muted);font-size:12px}
 </style></head><body><main>
 <div class="eyebrow">Offer Check · ${esc(c.domain)}${f.role ? ` · ${esc(f.role)}` : ""} · ${date}</div>
 <h1>${esc(f.company.name ?? c.domain)}</h1>
-<div class="score"><b>${r.score ?? "–"}</b><span>${r.score === null ? "" : "/ 100 · "}${scoreLabel(r.score)} · based on ${Math.round(r.coverage * 100)}% of the data areas</span></div>
+<div class="score"><b>${r.score ?? "–"}</b><span>${r.score === null ? "" : "/ 100 · "}${scoreLabel(r.score, r.coverage)} · based on ${Math.round(r.coverage * 100)}% of the data areas</span></div>
 ${a ? `<p class="verdict">${esc(a.verdict)}</p>` : ""}
 <div class="areas">${r.areas
     .map((x) => `<div class="card"><span class="badge" style="background:${LEVEL_COLOR[x.level]}">${LEVEL_TEXT[x.level]}</span><h3>${esc(x.label)}</h3><p>${esc(x.reason)}</p></div>`)

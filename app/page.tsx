@@ -107,7 +107,7 @@ export default async function Home() {
             {checks.map((c) => (
               <li key={c.id}>
                 <Link href={`/offer-check/${c.id}`} className="font-medium hover:underline">{c.factsData?.company.name ?? c.domain}</Link>
-                <span className="text-muted"> · {c.resultData ? `${c.resultData.score ?? "–"} · ${scoreLabel(c.resultData.score)}` : c.status}</span>
+                <span className="text-muted"> · {c.resultData ? `${c.resultData.score ?? "–"} · ${scoreLabel(c.resultData.score, c.resultData.coverage)}` : c.status}</span>
               </li>
             ))}
           </ul>

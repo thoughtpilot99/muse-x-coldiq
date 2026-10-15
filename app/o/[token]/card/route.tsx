@@ -18,7 +18,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/o/[token]/card">) {
         <div style={{ fontSize: 64, fontWeight: 700, marginTop: 16 }}>{c.factsData.company.name ?? c.domain}</div>
         <div style={{ display: "flex", alignItems: "baseline", marginTop: 24 }}>
           <div style={{ fontSize: 120, fontWeight: 800 }}>{String(r.score ?? "–")}</div>
-          <div style={{ fontSize: 36, color: "#9a9ca3", marginLeft: 16 }}>{`${r.score === null ? "" : "/ 100 · "}${scoreLabel(r.score)}`}</div>
+          <div style={{ fontSize: 36, color: "#9a9ca3", marginLeft: 16 }}>{`${r.score === null ? "" : "/ 100 · "}${scoreLabel(r.score, r.coverage)}`}</div>
         </div>
         <div style={{ display: "flex", marginTop: "auto", gap: 16 }}>
           {r.areas.map((a) => (

@@ -72,7 +72,9 @@ export async function explainOffer(opts: { facts: Facts; score: ScoreResult; che
       system: [
         "You help a job seeker judge the health of a company that offered them a job. You get numbered facts computed from public data",
         "and a colour per area (green, amber, red, unknown) decided by fixed rules.",
-        "Rules: use only these facts. Quote numbers exactly as written; never compute new numbers or estimate anything else.",
+        "Rules: use only these facts. Use the numbers exactly as given; never compute new numbers or estimate anything else.",
+        "Write natural, plain sentences a candidate would say (\"5 open roles now, up from 3 three months ago\"), never copy the table's labels, ids or colons.",
+        "Mention unknown areas once, in worries or caveats, not in every section.",
         "Never predict layoffs or failure; explain what the evidence shows and what is unknown. Unknown is not bad.",
         "Never mention or guess anyone's name.",
         "verdict: 1-2 plain sentences. good: up to 4 points. worries: up to 4 points (empty if none).",

@@ -38,7 +38,7 @@ export default async function OfferCheckDetail({ params }: PageProps<"/offer-che
       {r && f && (
         <>
           <div className="grid gap-3 md:grid-cols-3">
-            <Stat label="Score" value={r.score ?? "–"} hint={`${scoreLabel(r.score)} · ${Math.round(r.coverage * 100)}% of the data areas known`} />
+            <Stat label="Score" value={r.score ?? "–"} hint={`${scoreLabel(r.score, r.coverage)} · ${Math.round(r.coverage * 100)}% of the data areas known`} />
             <Stat label="Credits used" value={Math.round(c.credits * 100) / 100} hint="Repeat checks within 7 days are free" />
             <Stat label="Share" value={<a href={`/o/${c.token}`} target="_blank" className="text-base underline">Open public report</a>} hint="No names or raw data; not indexed" />
           </div>

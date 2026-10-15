@@ -60,7 +60,7 @@ export default async function OfferCheckPage() {
                 <tr key={c.id} className="border-t border-line">
                   <td className="py-2"><Link href={`/offer-check/${c.id}`} className="font-medium underline">{c.factsData?.company.name ?? c.domain}</Link></td>
                   <td className="text-muted">{c.role ?? "–"}</td>
-                  <td className="tabular-nums">{c.resultData ? `${c.resultData.score ?? "–"} · ${scoreLabel(c.resultData.score)}` : c.status === "failed" ? "failed" : "–"}</td>
+                  <td className="tabular-nums">{c.resultData ? `${c.resultData.score ?? "–"} · ${scoreLabel(c.resultData.score, c.resultData.coverage)}` : c.status === "failed" ? "failed" : "–"}</td>
                   <td className="tabular-nums">{Math.round(c.credits * 100) / 100}</td>
                   <td className="text-muted">{c.created_at.slice(0, 10)}</td>
                 </tr>

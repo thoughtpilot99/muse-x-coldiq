@@ -6,6 +6,7 @@ import { runStructured } from "@/lib/muse";
 import { explainOffer, factTable, ungroundedSentences } from "@/lib/offer/agent";
 import { buildFacts, type Facts, type RawSources, type Source, type SourceState } from "@/lib/offer/facts";
 import { scoreFacts } from "@/lib/offer/score";
+import { scoreLabel } from "@/lib/offer/report";
 import financing from "./fixtures/linear-financing.json";
 import jobs from "./fixtures/linear-jobs.json";
 import news from "./fixtures/linear-news.json";
@@ -132,6 +133,13 @@ describe("offer score", () => {
     })).areas[3];
     expect(a.level).toBe("amber");
     expect(a.reason).toBe("In the last 12 months: Security, product or legal incident reported (29, latest 2026-09-10).");
+  });
+
+  it("says when a score rests on limited data (sortlist.com: 100 from half the areas)", () => {
+    expect(scoreLabel(100, 1)).toBe("Looks healthy");
+    expect(scoreLabel(100, 0.5)).toBe("Looks healthy (limited data)");
+    expect(scoreLabel(50, 0.8)).toBe("Mixed signals");
+    expect(scoreLabel(null, 0.3)).toBe("Not enough data");
   });
 
   it("leaves unknown areas out and needs half the weight to give a score", () => {
