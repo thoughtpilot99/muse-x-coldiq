@@ -10,6 +10,7 @@ import {
 } from "@/lib/pipeline";
 import { getStudy, updateStudy } from "@/lib/db";
 import { DEFAULT_SETTINGS, saveSettings, type Settings } from "@/lib/settings";
+import { createOfferCheck, runOfferCheck } from "@/lib/offer/check";
 
 export type ActionResult = { ok: boolean; message: string };
 
@@ -105,5 +106,26 @@ export async function saveSettingsAction(_: ActionResult | null, fd: FormData) {
     }
     saveSettings(patch);
     return "Settings saved.";
+  });
+}
+
+export async function offerCheckAction(_: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  let id = 0;
+  const result = await attempt(async () => {
+    id = createOfferCheck({ website: str(fd, "website"), role: str(fd, "role") });
+    await runOfferCheck(id);
+    return "Done.";
+  });
+  // Even a failed check has a page that explains what went wrong.
+  if (id) redirect(`/offer-check/${id}`);
+  return result;
+}
+
+export async function refreshOfferAction(_: ActionResult | null, fd: FormData) {
+  return attempt(async () => {
+    const r = await runOfferCheck(idOf(fd));
+    return r.cached
+      ? "Updated from data fetched in the last 7 days (no credits used)."
+      : `Fetched fresh data for ${Math.round(r.spent * 100) / 100} credits.`;
   });
 }

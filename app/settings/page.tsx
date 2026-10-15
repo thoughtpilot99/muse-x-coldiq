@@ -35,6 +35,13 @@ export default async function SettingsPage() {
           </div>
           <p className="mt-3 text-xs text-muted">ColdIQ charges only when data is found. These caps are also sent with every call as max_credits, so a call can never cost more than what is left.</p>
         </Card>
+        <Card title="Offer Check">
+          <div className="grid gap-3 md:grid-cols-3">
+            {field("offerCheckCreditCap", "Credits per check", "A full check costs about 11")}
+            {field("costPerHeadLow", "Monthly cost per employee, low ($)", "For the runway estimate")}
+            {field("costPerHeadHigh", "Monthly cost per employee, high ($)")}
+          </div>
+        </Card>
         <Card title="Analysis">
           <div className="grid gap-3 md:grid-cols-2">
             {field("minSupport", "Minimum support", "A trait must appear in at least this many companies to count")}

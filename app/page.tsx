@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { all, get } from "@/lib/db";
+import { all, get, offerChecks } from "@/lib/db";
+import { viewOf } from "@/lib/offer/check";
+import { scoreLabel } from "@/lib/offer/report";
 import { config } from "@/lib/config";
 import { getBalance, type CreditBalance } from "@/lib/coldiq";
 import { spentToday } from "@/lib/credits";
@@ -41,6 +43,8 @@ export default async function Home() {
     { label: "Get your ICP report", done: analyzed, href: studies[0] ? `/studies/${studies[0].id}` : "/studies/new" },
     { label: "Find lookalike accounts", done: studies.some((st) => st.lookalikes > 0), href: studies[0] ? `/studies/${studies[0].id}` : "/studies/new" },
   ];
+
+  const checks = offerChecks(3).map(viewOf);
 
   return (
     <div className="space-y-6">
@@ -94,6 +98,20 @@ export default async function Home() {
         ) : (
           <p className="text-sm text-muted">No studies yet. <Link href="/studies/new" className="underline">Upload your customers</Link> to start.</p>
         )}
+      </Card>
+
+      <Card title="Offer Check" actions={<Link href="/offer-check" className="text-sm underline">Check a company</Link>}>
+        <p className="mb-2 text-sm text-muted">Got a job offer? See the company&apos;s funding, hiring trend, team growth and news before you sign.</p>
+        {checks.length ? (
+          <ul className="space-y-1 text-sm">
+            {checks.map((c) => (
+              <li key={c.id}>
+                <Link href={`/offer-check/${c.id}`} className="font-medium hover:underline">{c.factsData?.company.name ?? c.domain}</Link>
+                <span className="text-muted"> · {c.resultData ? `${c.resultData.score ?? "–"} · ${scoreLabel(c.resultData.score)}` : c.status}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </Card>
     </div>
   );

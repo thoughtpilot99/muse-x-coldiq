@@ -18,7 +18,7 @@ const reply = (body: unknown, credits: number, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "x-coldiq-credits-charged": String(credits) } });
 
 function coldiqMock(over: Partial<Record<"enrich" | "financing" | "jobs" | "news", () => Response>> = {}) {
-  return vi.fn(async (url: string) => {
+  return vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async (url) => {
     if (url.endsWith("/v1/company/enrich")) return over.enrich?.() ?? reply(ENRICH, 3.5);
     if (url.includes("/financing_events")) return over.financing?.() ?? reply(financing, 2.5116);
     if (url.includes("/job_openings")) return over.jobs?.() ?? reply(jobs, 2.5116);
@@ -59,7 +59,7 @@ describe("offer check pipeline", () => {
     expect(urls[1]).toBe("/v1/predictleads/companies/linear.app/financing_events");
     expect(urls[2]).toBe("/v1/predictleads/companies/linear.app/job_openings?limit=1000&last_seen_at_from=2026-03-29");
     expect(urls[3]).toBe("/v1/predictleads/companies/linear.app/news_events?limit=1000&found_at_from=2025-09-10");
-    expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body)).max_credits).toBe(15);
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).max_credits).toBe(15);
 
     expect(r.spent).toBeCloseTo(3.5 + 3 * 2.5116);
     expect(r.check.status).toBe("done");
