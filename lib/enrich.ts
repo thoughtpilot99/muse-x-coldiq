@@ -37,7 +37,7 @@ export async function runLens(c: Company, lens: Lens): Promise<Partial<Profile>>
       const since = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
       const body = await coldiq("/v1/jobs/search", {
         ...base,
-        body: { input: { company_domains: [c.domain], posted_after: since, limit: 50 }, ...common },
+        body: { input: { company_domains: [c.domain], posted_after: since, limit: 10 }, ...common },
       });
       return { hiring: missed(body) ? { total: 0, departments: {} } : hiring(data(body)) };
     }

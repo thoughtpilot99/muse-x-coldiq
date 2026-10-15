@@ -55,6 +55,24 @@ describe("profile extraction", () => {
     });
   });
 
+  it("reads ColdIQ's company/enrich shape (Lima Data)", () => {
+    const p = firmographics({
+      company: {
+        name: "Stripe", domain: "stripe.com", founded_year: 2010,
+        employees: { employee_count: 16622, employee_range: "5,001-10,000 employees" },
+        funding: { funding_rounds: [{ type: "Series H", date: "2023-03-15" }, { type: "Secondary Market", date: "2026-01-30" }] },
+        locations: [{ city: "Dublin", country: "IE", is_hq: false }, { city: "South San Francisco", country: "US", is_hq: true }],
+        revenue: { min: 100000000, max: 999999999, range: "$100M to <$1B" },
+        categories: { industry: "Technology, Information and Internet", keywords: ["Billing"] },
+        technologies: { categories: { CRM: ["Salesforce CRM", "Hubspot"], "Marketing Automation": ["Hubspot", "Marketo"] } },
+      },
+    });
+    expect(p).toMatchObject({
+      name: "Stripe", industry: "Technology, Information and Internet", employees: 16622, revenueUsd: 100000000,
+      country: "US", foundedYear: 2010, fundingStage: "Secondary Market", technologies: ["Salesforce CRM", "Hubspot", "Marketo"],
+    });
+  });
+
   it("parses amounts and groups job titles by department", () => {
     expect(parseAmount("1,200")).toBe(1200);
     expect(parseAmount("10K+")).toBe(10000);

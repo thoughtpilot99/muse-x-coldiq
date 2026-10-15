@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   offer: "",
   runCreditCap: 40,
   dailyCreditCap: 80,
-  perCompanyCreditCap: 3,
+  perCompanyCreditCap: 10,
   lookalikeLimit: 25,
   minSupport: 3,
 };

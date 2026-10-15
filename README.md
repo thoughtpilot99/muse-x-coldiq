@@ -237,13 +237,15 @@ All of this is in `lib/features.ts` and covered by tests.
 - **Recording:** it records exactly what ColdIQ reports as charged (the `X-ColdIQ-Credits-Charged` header or `_meta.credits_charged`).
 - **Display:** it shows the dollar value using `usd_per_credit` from `GET /v1/me/credits`.
 
-Defaults for the free tier:
+Defaults for the free tier. For reference, in October 2026 a firmographics lookup cost about 3.5 credits per company, so the per-run cap covers about 10 companies; a paused study continues where it stopped.
+
+Defaults:
 
 | Cap | Default | Meaning |
 |---|---|---|
 | Per run | 40 credits | One press of Enrich or Find lookalikes |
 | Per day | 80 credits | Across all studies |
-| Per company | 3 credits | Across all lenses for one company |
+| Per company | 10 credits | Across all lenses for one company |
 
 A study's total spend is shown on its page, and every call is listed on **Events** with its cost and raw response.
 

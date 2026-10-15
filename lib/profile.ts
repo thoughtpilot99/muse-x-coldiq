@@ -68,20 +68,36 @@ const year = (v: unknown) => {
 
 function stringList(v: unknown): string[] {
   if (typeof v === "string") return v.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
+  // Some providers group the stack by category: { CRM: ["Hubspot"], Analytics: ["Looker"] }.
+  if (isObj(v)) return [...new Set(Object.values(v).flatMap(stringList))];
   if (!Array.isArray(v)) return [];
   return v.map((x) => str(x)).filter((x): x is string => !!x);
 }
 
+/** Values that only exist inside lists: the HQ office, the latest funding round. */
+function fromLists(m: Map<string, unknown>) {
+  const list = (keys: string[]) => (pick(m, keys) as unknown[] | undefined)?.filter(isObj) ?? [];
+  const offices = list(["locations", "offices", "addresses"]);
+  const hq = offices.find((o) => o.is_hq === true || o.is_primary === true || o.headquarters === true) ?? offices[0];
+  const rounds = list(["funding_rounds", "rounds", "funding_events"])
+    .sort((a, b) => String(b.date ?? b.announced_on ?? "").localeCompare(String(a.date ?? a.announced_on ?? "")));
+  return {
+    country: str(hq?.country ?? hq?.country_code),
+    fundingStage: str(rounds[0]?.type ?? rounds[0]?.funding_type ?? rounds[0]?.round_type),
+  };
+}
+
 export function firmographics(record: unknown): Profile {
   const m = flatten(record);
+  const lists = fromLists(m);
   const p: Profile = {
     name: str(pick(m, ["name", "company_name", "organization_name", "legal_name"])),
     industry: str(pick(m, ["industry", "primary_industry", "linkedin_industry", "industries", "sector", "category"])),
     employees: parseAmount(pick(m, ["employee_count", "employees", "headcount", "num_employees", "estimated_num_employees", "employees_count", "company_size", "size", "employee_range", "employees_range"])),
     revenueUsd: parseAmount(pick(m, ["annual_revenue", "revenue", "estimated_revenue", "revenue_usd", "revenue_range", "estimated_annual_revenue"])),
-    country: str(pick(m, ["hq_country", "headquarters_country", "country", "country_name", "country_code"])),
+    country: str(pick(m, ["hq_country", "headquarters_country", "country", "country_name", "country_code"])) ?? lists.country,
     foundedYear: year(pick(m, ["founded_year", "year_founded", "founded", "founding_year"])),
-    fundingStage: str(pick(m, ["funding_stage", "last_funding_type", "latest_funding_stage", "last_funding_round_type", "latest_funding_type", "last_round_type"])),
+    fundingStage: str(pick(m, ["funding_stage", "last_funding_type", "latest_funding_stage", "last_funding_round_type", "latest_funding_type", "last_round_type"])) ?? lists.fundingStage,
     totalFundingUsd: parseAmount(pick(m, ["total_funding", "total_funding_usd", "funding_total", "total_funding_amount", "total_raised"])),
     technologies: stringList(pick(m, ["technologies", "tech_stack", "technology_names", "techs", "technology", "current_technologies"])).slice(0, 60),
     description: str(pick(m, ["short_description", "description", "summary", "about", "seo_description"]))?.slice(0, 600),
